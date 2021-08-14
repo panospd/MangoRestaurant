@@ -35,7 +35,6 @@ namespace Mango.Web.Controllers
         [Authorize]
         public IActionResult Login()
         {
-            var accessToken = HttpContext.GetTokenAsync("access_token").GetAwaiter().GetResult();
             return RedirectToAction(nameof(Index));
         }
 
