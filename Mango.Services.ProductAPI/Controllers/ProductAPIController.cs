@@ -22,7 +22,6 @@ namespace Mango.Services.ProductAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<ResponseDto> Get()
         {
             try
@@ -40,7 +39,6 @@ namespace Mango.Services.ProductAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         [Route("{id}")]
         public async Task<ResponseDto> Get(int id)
         {
