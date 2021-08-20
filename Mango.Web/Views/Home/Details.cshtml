@@ -1,6 +1,6 @@
-﻿@model ProductDto
+﻿@model Mango.Web.Models.ProductDto
 
-<form method="post">
+<form method="post" enctype="multipart/form-data" asp-controller="Home" asp-action="Details">
     <input asp-for="ProductId" hidden />
     <div class=" pt-4">
         <div class="card container" style="border:1px solid #808080;">
@@ -9,7 +9,7 @@
                     <h1 class="text-white">@Model.Name</h1>
                 </div>
                 <div class="col-12 col-md-6 text-end">
-                    <h1 class="text-warning"> @string.Format("{0:c}", @Model.Price)</h1>
+                    <h1 class="text-warning"> @string.Format("{0:c}", Model.Price)</h1>
                 </div>
             </div>
             <div class="card-body">
@@ -25,7 +25,7 @@
                                     <span class="badge badge-primary text-success p-3 border">@Model.CategoryName</span>
                                     <h3 class="text-success"></h3>
 
-                                    <p class="text-secondary">@Html.Raw(@Model.Description) </p>
+                                    <p class="text-secondary">@Html.Raw(Model.Description) </p>
                                 </div>
                             </div>
                             <div class="row px-4">
@@ -43,13 +43,13 @@
                 <div class="col-12 col-md-6 ">
 
 
-                    <button type="submit" class="btn btn-primary form-control btn-lg" style="height:50px;">Add to Cart</button>
+                    <input type="submit" class="btn btn-primary form-control btn-lg" style="height:50px;" value="Add to Cart"/>
                 </div>
             </div>
         </div>
     </div>
 </form>
 
-@section Scripts {
-<partial name="_ValidationScriptsPartial" />
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
 }
