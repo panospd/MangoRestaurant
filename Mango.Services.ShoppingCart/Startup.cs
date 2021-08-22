@@ -1,4 +1,5 @@
 using AutoMapper;
+using Mango.MessageBus;
 using Mango.Services.ShoppingCart.DbContexts;
 using Mango.Services.ShoppingCart.Repository;
 using Microsoft.AspNetCore.Builder;
@@ -34,6 +35,8 @@ namespace Mango.Services.ShoppingCart
             services.AddSingleton(mapper);
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddScoped<ICartRepository, CartRepository>();
+
+            services.AddMessageServices();
             services.AddControllers();
 
             services.AddAuthentication("Bearer")
