@@ -33,6 +33,7 @@ namespace Mango.Services.OrderAPI.Repository
             if(orderHeaderFromDb != default)
             {
                 orderHeaderFromDb.PaymentStatus = paid;
+                await _db.SaveChangesAsync();
             }
         }
     }

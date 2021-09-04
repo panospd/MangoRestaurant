@@ -9,38 +9,63 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Mango.MessageBus;
 
 namespace Mango.Services.OrderAPI.Messaging
 {
     public class AzureServiceBusConsumer : IAzureServiceBusConsumer
     {
         private readonly OrderRepository _orderRepository;
+        private readonly IMessageBus _messageBus;
         private readonly ServiceBusProcessor checkoutProcessor;
+        private readonly ServiceBusProcessor _orderUpdatePaymentStatusResultProcessor;
+        private readonly string _orderPaymentProcessTopic;
+        private readonly string _orderUpdatePaymentResultTopic;
 
-        public AzureServiceBusConsumer(OrderRepository orderRepository, IConfiguration configuration)
+        public AzureServiceBusConsumer(OrderRepository orderRepository, IConfiguration configuration, IMessageBus messageBus)
         {
             _orderRepository = orderRepository;
-
+            _messageBus = messageBus;
             var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusConnectionString");
             var subscriptionNameCheckout = configuration.GetValue<string>("SubscriptionNameCheckout");
             var checkoutMessageTopic = configuration.GetValue<string>("CheckoutMessageTopic");
+            _orderPaymentProcessTopic = configuration.GetValue<string>("OrderPaymentProcessTopic");
+            _orderUpdatePaymentResultTopic = configuration.GetValue<string>("OrderUpdatePaymentResultTopic");
 
             var client = new ServiceBusClient(serviceBusConnectionString);
-            checkoutProcessor = client.CreateProcessor(checkoutMessageTopic, subscriptionNameCheckout);
+            checkoutProcessor = client.CreateProcessor(checkoutMessageTopic);
+            _orderUpdatePaymentStatusResultProcessor = client.CreateProcessor(_orderUpdatePaymentResultTopic, subscriptionNameCheckout);
         }
 
         public async Task Start()
         {
             checkoutProcessor.ProcessMessageAsync += OnCheckoutMessageReceived;
             checkoutProcessor.ProcessErrorAsync += ErrorHandler;
-
             await checkoutProcessor.StartProcessingAsync();
+
+            _orderUpdatePaymentStatusResultProcessor.ProcessMessageAsync += OnOrderPaymentUpdateReceived;
+            _orderUpdatePaymentStatusResultProcessor.ProcessErrorAsync += ErrorHandler;
+            await _orderUpdatePaymentStatusResultProcessor.StartProcessingAsync();
+        }
+
+        private async Task OnOrderPaymentUpdateReceived(ProcessMessageEventArgs args)
+        {
+            var message = args.Message;
+            var body = Encoding.UTF8.GetString(message.Body);
+
+            var paymentResultMessage = JsonConvert.DeserializeObject<UpdatePaymentResultMessage>(body);
+
+            await _orderRepository.UpdateOrderPaymentStatus(paymentResultMessage.OrderId, paymentResultMessage.Status);
+            await args.CompleteMessageAsync(args.Message);
         }
 
         public async Task Stop()
         {
             await checkoutProcessor.StopProcessingAsync();
             await checkoutProcessor.DisposeAsync();
+
+            await _orderUpdatePaymentStatusResultProcessor.StopProcessingAsync();
+            await _orderUpdatePaymentStatusResultProcessor.DisposeAsync();
         }
 
         private Task ErrorHandler(ProcessErrorEventArgs arg)
@@ -90,6 +115,19 @@ namespace Mango.Services.OrderAPI.Messaging
             }
 
             await _orderRepository.AddOrder(orderHeader);
+
+            var paymentRequest = new PaymentRequestMessage
+            {
+                Name = orderHeader.FirstName + " " + orderHeader.LastName,
+                CardNumber = orderHeader.CardNumber,
+                CVV = orderHeader.CVV,
+                ExpiryMonthYear = orderHeader.ExpiryMonthYear,
+                OrderId = orderHeader.OrderHeaderId,
+                OrderTotal = orderHeader.OrderTotal
+            };
+
+            await _messageBus.PublishMessageAsync(paymentRequest, _orderPaymentProcessTopic);
+            await args.CompleteMessageAsync(args.Message);
         }
     }
 }
