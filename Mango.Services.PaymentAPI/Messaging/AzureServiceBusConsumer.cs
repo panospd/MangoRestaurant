@@ -65,7 +65,8 @@ namespace Mango.Services.PaymentAPI.Messaging
             var updatePaymentResultMessage = new UpdatePaymentResultMessage
             {
                 OrderId = paymentRequest.OrderId,
-                Status = result
+                Status = result,
+                Email = paymentRequest.Email
             };
 
             await _messageBus.PublishMessageAsync(updatePaymentResultMessage, _orderUpdatePaymentResultTopic);
