@@ -73,6 +73,8 @@ namespace Mango.Services.ShoppingCart.Repository
                 {
                     cart.CartDetails.FirstOrDefault().Count += cartDetailsFromDb.Count;
                     cart.CartDetails.FirstOrDefault().Product = default;
+                    cart.CartDetails.FirstOrDefault().CartDetailsId = cartDetailsFromDb.CartDetailsId;
+                    cart.CartDetails.FirstOrDefault().CartHeaderId = cartDetailsFromDb.CartHeaderId;
                     _db.CartDetails.Update(cart.CartDetails.FirstOrDefault());
                     await _db.SaveChangesAsync();
                 }
